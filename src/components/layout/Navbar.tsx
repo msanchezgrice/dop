@@ -1,11 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from 'react';
 import Link from "next/link";
 import { FiMenu, FiX, FiLogIn } from "react-icons/fi";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  useEffect(() => {
+    // Check if user is logged in (for demo purposes)
+    if (typeof window !== 'undefined') {
+      setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
+    }
+  }, []);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -35,18 +43,30 @@ const Navbar = () => {
           <Link href="/about" className="text-slate-700 hover:text-blue-600 font-medium">
             About Us
           </Link>
-          <Link 
-            href="/waitlist" 
-            className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            Join Waitlist
-          </Link>
-          <Link 
-            href="/login" 
-            className="border border-blue-600 text-blue-600 px-5 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center"
-          >
-            <FiLogIn className="mr-2" /> Login
-          </Link>
+          
+          {isLoggedIn ? (
+            <Link 
+              href="/dashboard" 
+              className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link 
+                href="/waitlist" 
+                className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                Join Waitlist
+              </Link>
+              <Link 
+                href="/login" 
+                className="border border-blue-600 text-blue-600 px-5 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center"
+              >
+                <FiLogIn className="mr-2" /> Login
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -108,20 +128,32 @@ const Navbar = () => {
             </Link>
 
             <div className="pt-6 mt-6 border-t border-slate-200 flex flex-col space-y-4">
-              <Link 
-                href="/waitlist" 
-                className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors w-full text-center"
-                onClick={toggleMenu}
-              >
-                Join Waitlist
-              </Link>
-              <Link 
-                href="/login" 
-                className="border border-blue-600 text-blue-600 px-5 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors w-full text-center flex items-center justify-center"
-                onClick={toggleMenu}
-              >
-                <FiLogIn className="mr-2" /> Login
-              </Link>
+              {isLoggedIn ? (
+                <Link 
+                  href="/dashboard" 
+                  className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors w-full text-center"
+                  onClick={toggleMenu}
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link 
+                    href="/waitlist" 
+                    className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors w-full text-center"
+                    onClick={toggleMenu}
+                  >
+                    Join Waitlist
+                  </Link>
+                  <Link 
+                    href="/login" 
+                    className="border border-blue-600 text-blue-600 px-5 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors w-full text-center flex items-center justify-center"
+                    onClick={toggleMenu}
+                  >
+                    <FiLogIn className="mr-2" /> Login
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
