@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { 
   FiCpu, 
   FiCheckCircle, 
@@ -10,10 +11,10 @@ import {
   FiShield,
   FiHelpCircle
 } from "react-icons/fi";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import Section from "@/components/ui/Section";
-import Button from "@/components/ui/Button";
+import Navbar from "../../components/layout/Navbar";
+import Footer from "../../components/layout/Footer";
+import Section from "../../components/ui/Section";
+import Button from "../../components/ui/Button";
 
 export default function HowItWorks() {
   return (
