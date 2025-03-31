@@ -49,13 +49,20 @@ export default function Chatbot() {
     trackEvent('chatbot_message_sent', { message_length: input.trim().length });
 
     // Get response from API
-    await sendMessageToChatbot([...messages, userMessage], (response) => {
-      setMessages(prev => [...prev, { role: 'assistant', content: response }]);
-      setIsLoading(false);
-      
-      // Track event
-      trackEvent('chatbot_response_received', { response_length: response.length });
-    });
+    await sendMessageToChatbot(
+      [...messages, userMessage], 
+      (response) => {
+        setMessages(prev => [...prev, { role: 'assistant', content: response }]);
+        setIsLoading(false);
+        
+        // Track event
+        trackEvent('chatbot_response_received', { response_length: response.length });
+      },
+      () => {
+        // This is the onComplete callback
+        // No additional action needed as we're already updating the state in the onChunkReceived callback
+      }
+    );
   };
 
   const toggleExpand = () => {
