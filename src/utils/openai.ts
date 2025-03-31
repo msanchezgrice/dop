@@ -44,12 +44,12 @@ export const getChatCompletion = async (
   }
   
   try {
+    // Using the /v1/chat/completions endpoint which is more stable
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'OpenAI-Beta': 'assistants=v2'
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         model: 'gpt-4o',
@@ -60,6 +60,8 @@ export const getChatCompletion = async (
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`OpenAI API error: ${response.status}`, errorText);
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
@@ -82,34 +84,36 @@ export const getChatCompletion = async (
       buffer += decoder.decode(value, { stream: true });
       
       // Process complete server-sent events
-      const lines = buffer.split('\n\n');
+      const lines = buffer.split('\n');
       buffer = lines.pop() || '';
       
       for (const line of lines) {
+        if (line.trim() === '') continue;
         if (line.startsWith('data: ')) {
           const data = line.slice(6);
           
           // Check for the [DONE] message
           if (data.trim() === '[DONE]') {
-            onComplete();
             continue;
           }
           
           try {
-            const event = JSON.parse(data) as OpenAIStreamingEvent;
+            const parsedData = JSON.parse(data);
             
-            // Handle different event types
-            if (event.type === 'response.content_part.added') {
-              // Starting a new content part
-            } else if (event.type === 'response.content_part.done' && event.part?.type === 'output_text') {
-              // Complete content part received
-              onChunkReceived(event.part.text);
-            } else if (event.part?.type === 'output_text' && event.part.text) {
-              // Streaming text chunks
-              onChunkReceived(event.part.text);
+            // Handle different data formats
+            if (parsedData.choices && parsedData.choices[0]) {
+              const { delta, finish_reason } = parsedData.choices[0];
+              
+              if (delta && delta.content) {
+                onChunkReceived(delta.content);
+              }
+              
+              if (finish_reason === 'stop') {
+                // We'll let the while loop handle completion
+              }
             }
           } catch (e) {
-            console.error('Error parsing SSE data:', e);
+            console.error('Error parsing SSE data:', e, 'Raw data:', data);
           }
         }
       }

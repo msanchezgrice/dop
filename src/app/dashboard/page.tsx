@@ -17,10 +17,12 @@ import {
   FiTrendingDown,
   FiAlertCircle,
 } from 'react-icons/fi';
+import { setupMockEnv, getEnvVars } from '@/utils/env';
 
 export default function DashboardPage() {
   const [userName, setUserName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [apiStatus, setApiStatus] = useState<'available' | 'mock' | 'error'>('mock');
   const router = useRouter();
   
   useEffect(() => {
@@ -40,6 +42,13 @@ export default function DashboardPage() {
     // Track page view
     trackEvent(AnalyticsEvents.PAGE_VIEW, { page: 'dashboard' });
     
+    // Check API status
+    setupMockEnv();
+    const env = getEnvVars();
+    if (env.NEXT_PUBLIC_OPENAI_API_KEY) {
+      setApiStatus('available');
+    }
+    
     setIsLoading(false);
   }, [router]);
   
@@ -58,6 +67,11 @@ export default function DashboardPage() {
           <p className="mt-2 text-slate-600">
             Here's what's happening with your product today.
           </p>
+          {apiStatus !== 'available' && (
+            <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+              <span className="font-medium">Note:</span> OpenAI API key is not set. Using mock responses for AI features.
+            </div>
+          )}
         </div>
         
         {/* Onboarding Progress */}
