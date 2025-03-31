@@ -26,6 +26,7 @@ export default function AIChat() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasWelcomeMessage, setHasWelcomeMessage] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -98,18 +99,39 @@ export default function AIChat() {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    setStreamingMessage(''); // Clear any previous streaming message
 
     // Track event
     trackEvent('ai_chat_message_sent', { message_length: input.trim().length });
 
-    // Get response from AI
-    await sendMessageToChatbot([...messages, userMessage], (response) => {
-      setMessages(prev => [...prev, { role: 'assistant', content: response }]);
-      setIsLoading(false);
-      
-      // Track event
-      trackEvent('ai_chat_response_received', { response_length: response.length });
-    });
+    // Add a placeholder for the assistant's streaming response
+    setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+    // Start streaming the response
+    let completeResponse = '';
+    
+    await sendMessageToChatbot(
+      [...messages, userMessage],
+      (chunk) => {
+        completeResponse += chunk;
+        setStreamingMessage(completeResponse);
+      },
+      () => {
+        // When complete, update the last message with the full response
+        setMessages(prev => 
+          prev.map((msg, idx) => 
+            idx === prev.length - 1 
+              ? { ...msg, content: completeResponse }
+              : msg
+          )
+        );
+        setStreamingMessage('');
+        setIsLoading(false);
+        
+        // Track event
+        trackEvent('ai_chat_response_received', { response_length: completeResponse.length });
+      }
+    );
   };
 
   const handleStarterClick = async (starter: string) => {
@@ -119,15 +141,36 @@ export default function AIChat() {
     const userMessage = { role: 'user' as const, content: starter };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
+    setStreamingMessage(''); // Clear any previous streaming message
 
     // Track event
     trackEvent('ai_chat_starter_used', { starter });
 
-    // Get response from AI
-    await sendMessageToChatbot([...messages, userMessage], (response) => {
-      setMessages(prev => [...prev, { role: 'assistant', content: response }]);
-      setIsLoading(false);
-    });
+    // Add a placeholder for the assistant's streaming response
+    setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+    // Start streaming the response
+    let completeResponse = '';
+    
+    await sendMessageToChatbot(
+      [...messages, userMessage],
+      (chunk) => {
+        completeResponse += chunk;
+        setStreamingMessage(completeResponse);
+      },
+      () => {
+        // When complete, update the last message with the full response
+        setMessages(prev => 
+          prev.map((msg, idx) => 
+            idx === prev.length - 1 
+              ? { ...msg, content: completeResponse }
+              : msg
+          )
+        );
+        setStreamingMessage('');
+        setIsLoading(false);
+      }
+    );
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -191,51 +234,47 @@ export default function AIChat() {
             </p>
           </div>
         ) : (
-          messages.filter(m => m.role !== 'system').map((message, index) => (
-            <div 
-              key={index} 
-              className={`mb-4 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              {message.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center mr-2">
-                  <span className="text-blue-600 font-semibold text-xs">AI</span>
-                </div>
-              )}
+          messages.filter(m => m.role !== 'system').map((message, index) => {
+            // For the last message, if we're streaming and it's the assistant's message
+            const isLastMessage = index === messages.filter(m => m.role !== 'system').length - 1;
+            const isStreamingLastMessage = isLastMessage && message.role === 'assistant' && isLoading;
+            const displayContent = isStreamingLastMessage ? streamingMessage : message.content;
+            
+            return (
               <div 
-                className={`rounded-lg px-4 py-3 max-w-[75%] ${
-                  message.role === 'user' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-white text-gray-800 border border-gray-200'
-                }`}
+                key={index} 
+                className={`mb-4 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ 
-                  __html: message.content
-                    .replace(/\n\n/g, '<br/><br/>')
-                    .replace(/\n/g, '<br/>')
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                }} />
-              </div>
-              {message.role === 'user' && (
-                <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center ml-2">
-                  <span className="text-gray-600 font-semibold text-xs">You</span>
+                {message.role === 'assistant' && (
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center mr-2">
+                    <span className="text-blue-600 font-semibold text-xs">AI</span>
+                  </div>
+                )}
+                <div 
+                  className={`rounded-lg px-4 py-3 max-w-[75%] ${
+                    message.role === 'user' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-white text-gray-800 border border-gray-200'
+                  }`}
+                >
+                  <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ 
+                    __html: displayContent
+                      .replace(/\n\n/g, '<br/><br/>')
+                      .replace(/\n/g, '<br/>')
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                  }} />
+                  {isStreamingLastMessage && (
+                    <span className="inline-block ml-1 animate-pulse">▌</span>
+                  )}
                 </div>
-              )}
-            </div>
-          ))
-        )}
-        {isLoading && (
-          <div className="flex justify-start mb-4">
-            <div className="w-8 h-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center mr-2">
-              <span className="text-blue-600 font-semibold text-xs">AI</span>
-            </div>
-            <div className="rounded-lg px-4 py-3 bg-white text-gray-500 border border-gray-200">
-              <div className="flex space-x-2">
-                <div className="h-2 w-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="h-2 w-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                <div className="h-2 w-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '600ms' }}></div>
+                {message.role === 'user' && (
+                  <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center ml-2">
+                    <span className="text-gray-600 font-semibold text-xs">You</span>
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
+            );
+          })
         )}
         <div ref={messagesEndRef} />
       </div>
