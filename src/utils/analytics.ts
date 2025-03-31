@@ -18,6 +18,7 @@ export const AnalyticsEvents = {
   SIGN_UP: 'sign_up',
   LOGIN: 'login',
   LOGOUT: 'logout',
+  AUTH_REDIRECT: 'auth_redirect',
   
   // Project events
   PROJECT_VIEW: 'project_view',
