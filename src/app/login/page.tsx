@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { login, isAuthenticated } from '@/utils/auth';
+import { trackEvent, AnalyticsEvents } from '@/utils/analytics';
+import { APP_NAME } from '@/utils/constants';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 
@@ -17,6 +20,13 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   
+  // Check if user is already authenticated
+  useEffect(() => {
+    if (isAuthenticated()) {
+      router.push('/dashboard');
+    }
+  }, [router]);
+  
   const {
     register,
     handleSubmit,
@@ -28,29 +38,29 @@ export default function LoginPage() {
     setError(null);
     
     try {
-      // In a real app, you'd validate credentials with your backend
-      // For demo purposes, we'll simulate success after a short delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Track login attempt
+      trackEvent(AnalyticsEvents.LOGIN, { success: false });
       
-      // Check if there's a stored user (this is just for demo purposes)
-      const storedUser = localStorage.getItem('user');
+      // Use the login utility
+      const success = await login(data.email, data.password);
       
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
+      if (success) {
+        // Track successful login
+        trackEvent(AnalyticsEvents.LOGIN, { success: true });
         
-        // Check if email matches (very simplified - in a real app, you'd check credentials properly)
-        if (user.email === data.email) {
-          // Set logged in status
-          localStorage.setItem('isLoggedIn', 'true');
-          
-          // Redirect to dashboard
-          router.push('/dashboard');
-          return;
-        }
+        // Store user data for demo purposes
+        localStorage.setItem('user', JSON.stringify({
+          firstName: 'Demo',
+          lastName: 'User',
+          email: data.email,
+          companyName: 'Game Studio'
+        }));
+        
+        // Redirect to dashboard
+        router.push('/dashboard');
+      } else {
+        setError('Invalid email or password. Please try again.');
       }
-      
-      // If we get here, login failed
-      setError('Invalid email or password. Please try again.');
     } catch (err) {
       setError('An error occurred during login. Please try again.');
       console.error(err);
@@ -66,7 +76,7 @@ export default function LoginPage() {
       <section className="py-16 bg-slate-50">
         <div className="max-w-md mx-auto px-6">
           <div className="card bg-white">
-            <h1 className="text-2xl font-bold text-center mb-6">Sign In to CPO.AI</h1>
+            <h1 className="text-2xl font-bold text-center mb-6">Sign In to {APP_NAME}</h1>
             
             {error && (
               <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg">

@@ -1,165 +1,133 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from "next/link";
-import { FiMenu, FiX, FiLogIn } from "react-icons/fi";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { APP_NAME } from '@/utils/constants';
+import { FiMenu, FiX } from 'react-icons/fi';
 
-const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  
+export default function Navbar() {
+  const pathname = usePathname();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Handle scroll event
   useEffect(() => {
-    // Check if user is logged in (for demo purposes)
-    if (typeof window !== 'undefined') {
-      setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
-    }
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
-
   return (
-    <nav className="bg-white bg-opacity-90 backdrop-blur-sm py-4 px-6 sticky top-0 z-50 shadow-sm">
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <Link href="/" className="flex items-center">
-          <span className="text-blue-600 font-bold text-2xl">CPO.AI</span>
-        </Link>
+    <header className={`sticky top-0 z-50 ${isScrolled ? 'bg-white shadow-sm' : 'bg-transparent'}`}>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center py-4">
+          {/* Logo */}
+          <Link href="/" className="flex items-center">
+            <span className="text-blue-600 font-bold text-2xl">{APP_NAME}</span>
+          </Link>
 
-        {/* Desktop Menu */}
-        <div className="hidden md:flex space-x-8 items-center">
-          <Link href="/" className="text-slate-700 hover:text-blue-600 font-medium">
-            Home
-          </Link>
-          <Link href="/features" className="text-slate-700 hover:text-blue-600 font-medium">
-            Features
-          </Link>
-          <Link href="/how-it-works" className="text-slate-700 hover:text-blue-600 font-medium">
-            How It Works
-          </Link>
-          <Link href="/pricing" className="text-slate-700 hover:text-blue-600 font-medium">
-            Pricing
-          </Link>
-          <Link href="/about" className="text-slate-700 hover:text-blue-600 font-medium">
-            About Us
-          </Link>
-          
-          {isLoggedIn ? (
-            <Link 
-              href="/dashboard" 
-              className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            >
-              Dashboard
-            </Link>
-          ) : (
-            <>
-              <Link 
-                href="/waitlist" 
-                className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-              >
-                Join Waitlist
-              </Link>
-              <Link 
-                href="/login" 
-                className="border border-blue-600 text-blue-600 px-5 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center"
-              >
-                <FiLogIn className="mr-2" /> Login
-              </Link>
-            </>
-          )}
-        </div>
-
-        {/* Mobile Menu Button */}
-        <div className="md:hidden">
-          <button
-            onClick={toggleMenu}
-            className="text-slate-700 hover:text-blue-600 focus:outline-none"
-          >
-            {isOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden fixed inset-0 bg-white z-50 pt-20 px-6">
-          <button
-            onClick={toggleMenu}
-            className="absolute top-4 right-6 text-slate-700 hover:text-blue-600 focus:outline-none"
-          >
-            <FiX size={24} />
-          </button>
-          
-          <div className="flex flex-col space-y-6 text-center">
-            <Link 
-              href="/" 
-              className="text-slate-700 hover:text-blue-600 font-medium text-xl"
-              onClick={toggleMenu}
-            >
-              Home
-            </Link>
-            <Link 
-              href="/features" 
-              className="text-slate-700 hover:text-blue-600 font-medium text-xl"
-              onClick={toggleMenu}
-            >
-              Features
-            </Link>
+          {/* Desktop Menu */}
+          <nav className="hidden md:flex space-x-8">
             <Link 
               href="/how-it-works" 
-              className="text-slate-700 hover:text-blue-600 font-medium text-xl"
-              onClick={toggleMenu}
+              className={`text-slate-700 font-medium hover:text-blue-600 ${pathname === '/how-it-works' ? 'text-blue-600' : ''}`}
             >
               How It Works
             </Link>
             <Link 
+              href="/features" 
+              className={`text-slate-700 font-medium hover:text-blue-600 ${pathname === '/features' ? 'text-blue-600' : ''}`}
+            >
+              Features
+            </Link>
+            <Link 
               href="/pricing" 
-              className="text-slate-700 hover:text-blue-600 font-medium text-xl"
-              onClick={toggleMenu}
+              className={`text-slate-700 font-medium hover:text-blue-600 ${pathname === '/pricing' ? 'text-blue-600' : ''}`}
             >
               Pricing
             </Link>
             <Link 
               href="/about" 
-              className="text-slate-700 hover:text-blue-600 font-medium text-xl"
-              onClick={toggleMenu}
+              className={`text-slate-700 font-medium hover:text-blue-600 ${pathname === '/about' ? 'text-blue-600' : ''}`}
             >
-              About Us
+              About
             </Link>
+          </nav>
 
-            <div className="pt-6 mt-6 border-t border-slate-200 flex flex-col space-y-4">
-              {isLoggedIn ? (
-                <Link 
-                  href="/dashboard" 
-                  className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors w-full text-center"
-                  onClick={toggleMenu}
-                >
-                  Dashboard
-                </Link>
-              ) : (
-                <>
-                  <Link 
-                    href="/waitlist" 
-                    className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors w-full text-center"
-                    onClick={toggleMenu}
-                  >
-                    Join Waitlist
-                  </Link>
-                  <Link 
-                    href="/login" 
-                    className="border border-blue-600 text-blue-600 px-5 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors w-full text-center flex items-center justify-center"
-                    onClick={toggleMenu}
-                  >
-                    <FiLogIn className="mr-2" /> Login
-                  </Link>
-                </>
-              )}
+          {/* CTA Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            <Link href="/login" className="text-slate-800 font-medium hover:text-blue-600">
+              Sign In
+            </Link>
+            <Link href="/signup" className="btn-primary">
+              Get Started
+            </Link>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden text-slate-800"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="md:hidden bg-white shadow-lg">
+          <div className="container mx-auto px-4 py-4 space-y-4">
+            <Link 
+              href="/how-it-works" 
+              className="block py-2 text-slate-700 font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              How It Works
+            </Link>
+            <Link 
+              href="/features" 
+              className="block py-2 text-slate-700 font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Features
+            </Link>
+            <Link 
+              href="/pricing" 
+              className="block py-2 text-slate-700 font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Pricing
+            </Link>
+            <Link 
+              href="/about" 
+              className="block py-2 text-slate-700 font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              About
+            </Link>
+            <div className="pt-4 flex flex-col space-y-3">
+              <Link 
+                href="/login" 
+                className="text-slate-800 font-medium py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Sign In
+              </Link>
+              <Link 
+                href="/signup" 
+                className="btn-primary text-center"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Get Started
+              </Link>
             </div>
           </div>
         </div>
       )}
-    </nav>
+    </header>
   );
-};
-
-export default Navbar; 
+} 

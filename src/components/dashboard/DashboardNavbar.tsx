@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { APP_NAME } from '@/utils/constants';
+import { isAuthenticated, removeToken } from '@/utils/auth';
+import { trackEvent, AnalyticsEvents } from '@/utils/analytics';
 import { 
   FiHome, 
   FiBarChart2, 
@@ -36,9 +38,16 @@ export default function DashboardNavbar() {
   };
   
   const handleSignOut = () => {
-    // In a real app, you'd call your auth service to sign out
-    localStorage.removeItem('isLoggedIn');
+    // Track logout event
+    trackEvent(AnalyticsEvents.LOGOUT);
+    
+    // Remove token using auth utility
+    removeToken();
+    
+    // Clear user data from localStorage
     localStorage.removeItem('user');
+    
+    // Redirect to login page
     router.push('/login');
   };
   
