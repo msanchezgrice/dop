@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { APP_NAME } from '@/utils/constants';
 import { 
   FiHome, 
   FiBarChart2, 
@@ -54,7 +55,7 @@ export default function DashboardNavbar() {
       <div className="fixed top-0 left-0 right-0 z-20 bg-white border-b border-slate-200 lg:hidden">
         <div className="flex items-center justify-between px-4 py-3">
           <Link href="/dashboard" className="flex items-center">
-            <span className="text-blue-600 font-bold text-xl">CPO.AI</span>
+            <span className="text-blue-600 font-bold text-xl">{APP_NAME}</span>
           </Link>
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -83,7 +84,7 @@ export default function DashboardNavbar() {
           {/* Logo */}
           <div className="px-6 py-5 border-b border-slate-200">
             <Link href="/dashboard" className="flex items-center">
-              <span className="text-blue-600 font-bold text-xl">CPO.AI</span>
+              <span className="text-blue-600 font-bold text-xl">{APP_NAME}</span>
             </Link>
           </div>
           
