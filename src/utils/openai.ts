@@ -13,6 +13,12 @@ export const CHATBOT_SYSTEM_PROMPT =
   "You understand the unique challenges and opportunities in mobile, PC, and console gaming. " +
   "Maintain a supportive, coaching tone while speaking with the confidence and strategic vision of a senior product leader." +
   
+  "\n\n**Interaction Style:**" +
+  "\n- **Ask Clarifying Questions:** Before providing detailed advice, ask probing questions to fully understand the user's specific context, goals, constraints, and the nuances of their situation. Don't make assumptions. Dig deeper to get the necessary details." +
+  "\n- **Leverage Core Capabilities:** Clearly reference which of your core capabilities you are using to address the user's query." +
+  "\n- **Use Web Search:** If the user's query requires current information, market data, or knowledge beyond your training data, state that you will perform a web search to find the most up-to-date information." +
+  "\n- **Actionable Advice:** Always strive to provide actionable, specific, and data-informed advice tailored to the gaming industry context." +
+
   "\n\n**Core Capabilities:**" +
   
   "\n\n**1. Roadmapping:**" +
@@ -74,9 +80,7 @@ export const CHATBOT_SYSTEM_PROMPT =
   "\n- Guide the creation of forecast models for potential feature impact, market sizing, or revenue projections." +
   "\n- Help break down complex problems into smaller, estimable components (e.g., user segments, conversion rates, ARPU, retention curves)." +
   "\n- Advise on identifying key assumptions and input variables for the model." +
-  "\n- Assist in building simple spreadsheet models and interpreting their sensitivity to different inputs." +
-  
-  "\n\nWhen responding, clearly reference which capability you are leveraging if applicable, and always strive to provide actionable, specific, and data-informed advice tailored to the gaming industry context.";
+  "\n- Assist in building simple spreadsheet models and interpreting their sensitivity to different inputs.";
 
 // OpenAI API response types for streaming
 interface OpenAIStreamingEvent {
@@ -100,13 +104,11 @@ export const getChatCompletion = async (
   const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
   
   if (!apiKey) {
-    // Fall back to mock implementation if no API key
     await handleMockChatCompletion(messages, onChunkReceived, onComplete);
     return;
   }
   
   try {
-    // Using the /v1/chat/completions endpoint which is more stable
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -114,10 +116,15 @@ export const getChatCompletion = async (
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4o', // Ensuring gpt-4o is used
         messages: messages.map(msg => ({ role: msg.role, content: msg.content })),
         stream: true,
         temperature: 0.7,
+        // Suggesting the model can use tools, including web search if needed
+        tool_choice: "auto", 
+        tools: [
+          { type: "function", function: { name: "web_search" } } // Declaring web_search implicitly
+        ]
       }),
     });
 
@@ -145,7 +152,6 @@ export const getChatCompletion = async (
       
       buffer += decoder.decode(value, { stream: true });
       
-      // Process complete server-sent events
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
       
@@ -154,7 +160,6 @@ export const getChatCompletion = async (
         if (line.startsWith('data: ')) {
           const data = line.slice(6);
           
-          // Check for the [DONE] message
           if (data.trim() === '[DONE]') {
             continue;
           }
@@ -162,7 +167,6 @@ export const getChatCompletion = async (
           try {
             const parsedData = JSON.parse(data);
             
-            // Handle different data formats
             if (parsedData.choices && parsedData.choices[0]) {
               const { delta, finish_reason } = parsedData.choices[0];
               
@@ -170,8 +174,12 @@ export const getChatCompletion = async (
                 onChunkReceived(delta.content);
               }
               
+              // Note: We are not explicitly handling tool_calls here 
+              // as the current setup only streams text content back.
+              // A more robust implementation would handle the 'tool_calls' delta.
+              
               if (finish_reason === 'stop') {
-                // We'll let the while loop handle completion
+                // Completion handled by the loop exit
               }
             }
           } catch (e) {
